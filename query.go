@@ -32,6 +32,10 @@ func NewBuilder() *Builder {
 	return &b
 }
 
+/**
+SELECT Section
+ */
+
 //Select -
 func (b *Builder) Select(columns ...string) *Builder {
 	b.sqlType = selectEnum
@@ -50,36 +54,6 @@ func (b *Builder) From(tables string) *Builder {
 		p.parts = make([]string, 1)
 	}
 	p.parts[0] = tables
-	b.add(p)
-
-	return b
-}
-
-//Where -
-func (b *Builder) Where(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	if p.parts == nil {
-		p.parts = make([]string, 1)
-	}
-	p.parts[0] = "(" + condition + ")"
-	b.add(p)
-
-	return b
-}
-
-//AndWhere -
-func (b *Builder) AndWhere(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	p.parts = []string{"AND (" + condition + ")"}
-	b.add(p)
-
-	return b
-}
-
-//OrWhere -
-func (b *Builder) OrWhere(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	p.parts = []string{"OR (" + condition + ")"}
 	b.add(p)
 
 	return b
@@ -129,6 +103,10 @@ func (b *OrderBuilder) getSQL() string {
 	return strings.Join(b.sqlParts, ", ")
 }
 
+/**
+INSERT Section
+ */
+
 func (b *Builder) Insert(table string) *Builder {
 	b.sqlType = insertEnum
 
@@ -175,6 +153,88 @@ func (b *Builder) Columns(columns ...string) *Builder {
 	return b
 }
 
+/**
+UPDATE Section
+ */
+
+func (b *Builder) Update(table string) *Builder {
+	b.sqlType = updateEnum
+
+	return b.From(table)
+}
+
+func (b *Builder) Set(column, parameter string) *Builder {
+	appendPart := []insertValueSQL{{name: column, parameter:parameter}}
+
+	var newParts []insertValueSQL
+
+	if ok, part := b.getPart(columnsPartEnum); ok {
+		parts := part.(insertValuePartSQL).parts
+		newParts = append(parts, appendPart...)
+
+		b.removePart(columnsPartEnum)
+		b.add(insertValuePartSQL{part: columnsPartEnum, parts: newParts})
+	} else {
+		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
+	}
+
+	return b
+}
+
+func (b *Builder) Sets(columns ...string) *Builder {
+	if len(columns) == 0 {
+		return b
+	}
+
+	appendPart := make([]insertValueSQL, len(columns))
+	for c, i := range columns {
+		appendPart[c] = insertValueSQL{name:i, parameter:"?"}
+	}
+
+	if ok, part := b.getPart(columnsPartEnum); ok {
+		parts := part.(insertValuePartSQL).parts
+		parts = append(parts, appendPart...)
+	} else {
+		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
+	}
+
+	return b
+}
+
+/**
+WHERE Section
+ */
+
+//Where -
+func (b *Builder) Where(condition string) *Builder {
+	p := partSQL{part: wherePartEnum}
+	if p.parts == nil {
+		p.parts = make([]string, 1)
+	}
+	p.parts[0] = "(" + condition + ")"
+	b.add(p)
+
+	return b
+}
+
+//AndWhere -
+func (b *Builder) AndWhere(condition string) *Builder {
+	p := partSQL{part: wherePartEnum}
+	p.parts = []string{"AND (" + condition + ")"}
+	b.add(p)
+
+	return b
+}
+
+//OrWhere -
+func (b *Builder) OrWhere(condition string) *Builder {
+	p := partSQL{part: wherePartEnum}
+	p.parts = []string{"OR (" + condition + ")"}
+	b.add(p)
+
+	return b
+}
+
 //SetParameter -
 func (b *Builder) SetParameter(p, v interface{}) *Builder {
 	if b.params == nil {
@@ -211,10 +271,17 @@ func (b *Builder) GetSQL() string {
 	case insertEnum:
 		b.sql = b.getSQLForInsert()
 		break
+	case updateEnum:
+		b.sql = b.getSQLForUpdate()
+		break
 	}
 
 	return b.sql
 }
+
+/*
+Utils functions
+ */
 
 func (b *Builder) getPart(e partEnum) (bool, part) {
 	r := -1
@@ -383,6 +450,30 @@ func (b *Builder) getSQLForInsert() string {
 		}
 		q += "(" + strings.Join(cols, ", ") + ") "
 		q += "VALUES (" + strings.Join(vals, ", ") + ") "
+	}
+
+	return q
+
+}
+
+func (b *Builder) getSQLForUpdate() string {
+
+	q := "UPDATE "
+
+	if ok, bFrom := b.getPart(fromPartEnum); ok {
+		q += bFrom.(fromPartSQL).getFrom() + " SET "
+	}
+
+	if ok, bSelect := b.getPart(columnsPartEnum); ok {
+		p := make([]string, len(bSelect.(insertValuePartSQL).parts))
+		for i, o := range bSelect.(insertValuePartSQL).parts {
+			p[i] = o.name + " = " + o.parameter
+		}
+		q += strings.Join(p, ", ") + " "
+	}
+
+	if ok, bWhere := b.getPart(wherePartEnum); ok {
+		q += "WHERE " + bWhere.(partSQL).getWhere() + " "
 	}
 
 	return q

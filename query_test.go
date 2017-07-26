@@ -75,3 +75,22 @@ func TestInsertParams(t *testing.T) {
 	assert.Equal(t, []interface{}{1,2,3}, b.GetParameters())
 
 }
+
+func TestUpdate(t *testing.T) {
+
+	b := NewBuilder()
+
+	b.Update("table_1").
+		Sets("column_1", "column_2", "column_3")
+
+	assert.Equal(t, "UPDATE TABLE_1 SET COLUMN_1 = ?, COLUMN_2 = ?, COLUMN_3 = ? ", strings.ToUpper(b.GetSQL()))
+
+	b = NewBuilder()
+
+	b.Update("table_1").
+		Sets("column_1", "column_2", "column_3").
+		Set("column_4", "?::bit")
+
+	assert.Equal(t, "UPDATE TABLE_1 SET COLUMN_1 = ?, COLUMN_2 = ?, COLUMN_3 = ?, COLUMN_4 = ?::BIT ", strings.ToUpper(b.GetSQL()))
+
+}
