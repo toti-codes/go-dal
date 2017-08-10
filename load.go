@@ -6,8 +6,16 @@ import (
 	"errors"
 )
 
-// Load loads any value from sql.Rows
 func Load(rows *sql.Rows, value interface{}) (int, error) {
+	return load(rows, value, false)
+}
+
+func LoadOne(rows *sql.Rows, value interface{}) (int, error) {
+	return load(rows, value, true)
+}
+
+// Load loads any value from sql.Rows
+func load(rows *sql.Rows, value interface{}, oneResult bool) (int, error) {
 	column, err := rows.Columns()
 	if err != nil {
 		return 0, err
@@ -39,6 +47,9 @@ func Load(rows *sql.Rows, value interface{}) (int, error) {
 		if isSlice {
 			v.Set(reflect.Append(v, elem))
 		} else {
+			break
+		}
+		if oneResult {
 			break
 		}
 	}

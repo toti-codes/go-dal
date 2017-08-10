@@ -1,119 +1,181 @@
 package dal
 
-import "strings"
-
-const (
-	selectEnum sqlEnum = 0
-	insertEnum sqlEnum = 1
-	updateEnum sqlEnum = 2
-	deleteEnum sqlEnum = 3
+import (
+	"strings"
 )
 
 const (
 	inner joinEnum = "INNER"
-	left joinEnum = "LEFT"
+	left  joinEnum = "LEFT"
 	right joinEnum = "RIGHT"
 )
 
 const (
-	stateDirty stateEnum = 0
-	stateClean stateEnum = 1
+	asc orderEnum = "ASC"
+	desc orderEnum = "DESC"
 )
 
 const (
-	selectPartEnum partEnum = 0
-	fromPartEnum partEnum = 1
-	wherePartEnum partEnum = 2
-	joinPartEnum partEnum = 3
-	orderByASCPartEnum partEnum = 4
-	orderByDESCPartEnum partEnum = 5
+	selectPartEnum      partEnum = 0
+	fromPartEnum        partEnum = 1
+	tablePartEnum       partEnum = 2
+	joinPartEnum        partEnum = 3
+	wherePartEnum       partEnum = 4
+	groupPartEnum		partEnum = 5
+	havingPartEnum		partEnum = 6
+	orderByPartEnum  	partEnum = 7
 
-	insertPartEnum partEnum = 6
-	columnsPartEnum partEnum = 7
+	insertPartEnum  partEnum = 10
+	columnsPartEnum partEnum = 11
 )
 
 type sqlEnum int
 
-type stateEnum int
-
 type joinEnum string
+
+type orderEnum string
 
 type partEnum int
 
-type part interface{
+type part interface {
 	getPartEnum() partEnum
+	getSQL() string
 }
 
 type partSQL struct {
-	part partEnum
+	part  partEnum
 	parts []string
-}
-
-type fromSQL struct {
-	name, alias string
-}
-
-type fromPartSQL struct {
-	part partEnum
-	parts []string
-}
-
-type join struct {
-	join joinEnum
-	fromAlias, joinTable, joinAlias, joinCondition string
-}
-
-type joinPartSQL struct {
-	part partEnum
-	parts []join
-}
-
-type insertValueSQL struct {
-	name, parameter string
-}
-
-type insertValuePartSQL struct {
-	part partEnum
-	parts []insertValueSQL
 }
 
 func (p partSQL) getPartEnum() partEnum {
 	return p.part
 }
 
-func (p fromPartSQL) getPartEnum() partEnum {
-	return p.part
+func (p partSQL) getSQL() string {
+	if p.part == selectPartEnum {
+		return strings.Join(p.parts, ", ")
+	} else if p.part == fromPartEnum {
+		return " FROM " + strings.Join(p.parts, ", ")
+	} else if p.part == groupPartEnum {
+		return " GROUP BY " + strings.Join(p.parts, ", ")
+	} else if p.part == havingPartEnum {
+		return " HAVING " + strings.Join(p.parts, ", ")
+	} else if p.part == insertPartEnum {
+		return strings.Join(p.parts, ", ")
+	} else if p.part == tablePartEnum {
+		return p.parts[0]
+	}
+
+	return ""
+}
+
+type Join struct {
+	fromAlias, joinTable, joinCondition string
+}
+
+type joinContainer struct {
+	*Join
+	join joinEnum
+}
+
+type joinPartSQL struct {
+	parts []joinContainer
 }
 
 func (p joinPartSQL) getPartEnum() partEnum {
-	return p.part
+	return joinPartEnum
 }
 
-func (p insertValuePartSQL) getPartEnum() partEnum {
-	return p.part
-}
-
-func (p fromPartSQL) getFrom() string {
-	return strings.Join(p.parts, ",")
-}
-
-func (p partSQL) getWhere() (where string) {
+func (p joinPartSQL) getSQL() (join string) {
 	for _, v := range p.parts {
-		where += v + " "
-	}
-	return
-}
-
-func (p joinPartSQL) getJoin() (join string) {
-	for _, v := range p.parts {
-		join += string(v.join) + " JOIN " + v.joinTable + " " + v.joinAlias + " "
+		join += " " + string(v.join) + " JOIN " + v.joinTable
 		if v.joinCondition != "" {
-			join += "ON " + v.joinCondition + " "
+			join += " ON " + v.joinCondition
 		}
 	}
 	return
 }
 
-func (p partSQL) getOrderBy() string {
-	return strings.Join(p.parts, ", ")
+type Order struct {
+	columns []string
+}
+
+type orderContainer struct {
+	*Order
+	order orderEnum
+}
+
+type orderPartSQL struct {
+	parts []orderContainer
+}
+
+func (p orderPartSQL) getPartEnum() partEnum {
+	return orderByPartEnum
+}
+
+func (p orderPartSQL) getSQL() (order string) {
+	order += " ORDER BY "
+
+	for i, c := range p.parts {
+		if i > 0 {
+			order += ", "
+		}
+		order += strings.Join(c.columns, ", ") + " " + string(c.order)
+	}
+
+	return
+}
+
+type Where struct {
+	condition string
+}
+
+type whereContainer struct {
+	*Where
+	conditionType string
+}
+
+type wherePartSQL struct {
+	parts []whereContainer
+}
+
+func (p wherePartSQL) getPartEnum() partEnum {
+	return wherePartEnum
+}
+
+func (p wherePartSQL) getSQL() (order string) {
+	order += " WHERE "
+	if len(p.parts) > 1 {
+		order += "("
+	}
+
+	for i, c := range p.parts {
+		if i > 0 {
+			order += " " + c.conditionType + " "
+		}
+		order += "(" + c.condition + ")"
+	}
+
+	if len(p.parts) > 1 {
+		order += ")"
+	}
+
+	return
+}
+
+type columnSQL struct {
+	name, parameter string
+}
+
+type columnPartSQL struct {
+	part  partEnum
+	parts []columnSQL
+}
+
+func (p columnPartSQL) getPartEnum() partEnum {
+	return p.part
+}
+
+func (p columnPartSQL) getSQL() (order string) {
+	return ""
 }

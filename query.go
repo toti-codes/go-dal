@@ -1,238 +1,76 @@
 package dal
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
-var (
-	firstResult = 0
-	maxResult   = 0
-)
+type IBuilder interface {
+	GetSQL() string
+}
 
 //Builder -
 type Builder struct {
+	b		 IBuilder
 	sqlType  sqlEnum
-	state    stateEnum
 	sql      string
 	sqlParts []part
 	params   map[interface{}]interface{}
-}
-
-type OrderBuilder struct {
-	b *Builder
-	sqlParts []string
+	finalParams []interface{}
 }
 
 func NewBuilder() *Builder {
 	b := Builder{}
 	if b.sqlParts == nil {
-		b.state = stateDirty
 		b.sqlParts = make([]part, 0)
 	}
 	return &b
 }
 
-/**
-SELECT Section
- */
-
 //Select -
-func (b *Builder) Select(columns ...string) *Builder {
-	b.sqlType = selectEnum
-
+func (b *Builder) Select(columns ...string) *SelectBuilder {
+	sb := SelectBuilder{b: b}
+	b.b = &sb
 	if len(columns) > 0 {
-		b.add(partSQL{part: selectPartEnum, parts: columns})
+		b.sqlParts = append(b.sqlParts, partSQL{part: selectPartEnum, parts: columns})
 	}
 
-	return b
+	return &sb
 }
 
-//From -
-func (b *Builder) From(tables string) *Builder {
-	p := fromPartSQL{part: fromPartEnum}
-	if p.parts == nil {
-		p.parts = make([]string, 1)
-	}
-	p.parts[0] = tables
-	b.add(p)
+func (b *Builder) Insert(table string) *InsertBuilder {
+	sb := InsertBuilder{b: b}
+	b.b = &sb
+	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
 
-	return b
+	return &sb
 }
 
-//InnerJoin -
-func (b *Builder) InnerJoin(from, j, a, c string) *Builder {
-	b.addJoin(inner, from, j, a, c)
+func (b *Builder) Update(table string) *UpdateBuilder {
+	sb := UpdateBuilder{b: b}
+	b.b = &sb
+	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
 
-	return b
+	return &sb
 }
 
-//LeftJoin -
-func (b *Builder) LeftJoin(f, j, a, c string) *Builder {
-	b.addJoin(left, f, j, a, c)
+func (b *Builder) Delete(table string) *DeleteBuilder {
+	sb := DeleteBuilder{b: b}
+	b.b = &sb
+	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
 
-	return b
+	return &sb
 }
 
-//RightJoin -
-func (b *Builder) RightJoin(f, j, a, c string) *Builder {
-	b.addJoin(right, f, j, a, c)
+func (b *Builder) SQL(sql string) *SQLBuilder {
+	sb := SQLBuilder{b: b}
+	b.b = &sb
 
-	return b
-}
+	b.sqlParts = []part{ partSQL{part: tablePartEnum, parts: []string{sql}} }
 
-func (b *Builder) OrderBy(columns ...string) *OrderBuilder {
-	o := OrderBuilder{b:b}
-	o.sqlParts = columns
-
-	return &o
-}
-
-func (b *OrderBuilder) ASC() *Builder {
-	b.b.add(partSQL{part: orderByASCPartEnum, parts: []string{b.getSQL()}})
-
-	return b.b
-}
-
-func (b *OrderBuilder) DESC() *Builder {
-	b.b.add(partSQL{part: orderByDESCPartEnum, parts: []string{b.getSQL()}})
-
-	return b.b
-}
-
-func (b *OrderBuilder) getSQL() string {
-	return strings.Join(b.sqlParts, ", ")
-}
-
-/**
-INSERT Section
- */
-
-func (b *Builder) Insert(table string) *Builder {
-	b.sqlType = insertEnum
-
-	b.add(fromPartSQL{part: insertPartEnum, parts: []string {table}})
-
-	return b
-}
-
-func (b *Builder) Column(column, parameter string) *Builder {
-	appendPart := []insertValueSQL{{name: column, parameter:parameter}}
-
-	var newParts []insertValueSQL
-
-	if ok, part := b.getPart(columnsPartEnum); ok {
-		parts := part.(insertValuePartSQL).parts
-		newParts = append(parts, appendPart...)
-
-		b.removePart(columnsPartEnum)
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: newParts})
-	} else {
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
-	}
-
-	return b
-}
-
-func (b *Builder) Columns(columns ...string) *Builder {
-	if len(columns) == 0 {
-		return b
-	}
-
-	appendPart := make([]insertValueSQL, len(columns))
-	for c, i := range columns {
-		appendPart[c] = insertValueSQL{name:i, parameter:"?"}
-	}
-
-	if ok, part := b.getPart(columnsPartEnum); ok {
-		parts := part.(insertValuePartSQL).parts
-		parts = append(parts, appendPart...)
-	} else {
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
-	}
-
-	return b
-}
-
-/**
-UPDATE Section
- */
-
-func (b *Builder) Update(table string) *Builder {
-	b.sqlType = updateEnum
-
-	return b.From(table)
-}
-
-func (b *Builder) Set(column, parameter string) *Builder {
-	appendPart := []insertValueSQL{{name: column, parameter:parameter}}
-
-	var newParts []insertValueSQL
-
-	if ok, part := b.getPart(columnsPartEnum); ok {
-		parts := part.(insertValuePartSQL).parts
-		newParts = append(parts, appendPart...)
-
-		b.removePart(columnsPartEnum)
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: newParts})
-	} else {
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
-	}
-
-	return b
-}
-
-func (b *Builder) Sets(columns ...string) *Builder {
-	if len(columns) == 0 {
-		return b
-	}
-
-	appendPart := make([]insertValueSQL, len(columns))
-	for c, i := range columns {
-		appendPart[c] = insertValueSQL{name:i, parameter:"?"}
-	}
-
-	if ok, part := b.getPart(columnsPartEnum); ok {
-		parts := part.(insertValuePartSQL).parts
-		parts = append(parts, appendPart...)
-	} else {
-		b.add(insertValuePartSQL{part: columnsPartEnum, parts: appendPart})
-	}
-
-	return b
-}
-
-/**
-WHERE Section
- */
-
-//Where -
-func (b *Builder) Where(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	if p.parts == nil {
-		p.parts = make([]string, 1)
-	}
-	p.parts[0] = "(" + condition + ")"
-	b.add(p)
-
-	return b
-}
-
-//AndWhere -
-func (b *Builder) AndWhere(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	p.parts = []string{"AND (" + condition + ")"}
-	b.add(p)
-
-	return b
-}
-
-//OrWhere -
-func (b *Builder) OrWhere(condition string) *Builder {
-	p := partSQL{part: wherePartEnum}
-	p.parts = []string{"OR (" + condition + ")"}
-	b.add(p)
-
-	return b
+	return &sb
 }
 
 //SetParameter -
@@ -247,35 +85,65 @@ func (b *Builder) SetParameter(p, v interface{}) *Builder {
 }
 
 func (b *Builder) GetParameters() []interface{} {
-	values := make([]interface{}, len(b.params))
+	return b.finalParams
+}
 
-	i := 0
-	for _, v := range b.params {
-		values[i] = v
-		i++
+func (b *Builder) Build() (*Builder, error) {
+	if b.sql != "" {
+		return nil, fmt.Errorf("Query was already build")
 	}
 
-	return values
+	sql := b.b.GetSQL()
+
+	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
+
+	matches := r.FindAllStringSubmatchIndex(sql, -1)
+
+	var iParam, sParam int
+
+	for i, v := range matches {
+		param := "?"
+		if v[1] - 1 == v[0] {
+			if _, ok := b.params[iParam]; !ok {
+				error := ""
+				if iParam == 0 {
+					if _, ok := b.params[1]; !ok {
+						error = "The first index param must be 0 or 1"
+					}
+				} else {
+					error = "Can not find parameter with index " + strconv.Itoa(iParam)
+				}
+
+				if error != "" {
+					return nil, fmt.Errorf(error)
+				}
+			}
+			b.finalParams = append(b.finalParams, b.params[iParam])
+
+			iParam++
+		} else {
+			param = r.FindAllString(sql,sParam + 1)[sParam]
+			param = strings.Replace(param, " :", ":", 1)
+			paramName := strings.Replace(param, ":", "", 1)
+			if _, ok := b.params[paramName]; !ok {
+				return nil, fmt.Errorf("Can not find parameter with name %s", param[i])
+			}
+
+			b.finalParams = append(b.finalParams, b.params[paramName])
+
+			sParam++
+		}
+
+		sql = strings.Replace(sql, param, getPlaceHolder(iParam + sParam), 1)
+	}
+
+	b.sql = sql
+
+	return b, nil
 }
 
 //GetSQL -
 func (b *Builder) GetSQL() string {
-	if b.sql != "" && b.state == stateClean {
-		return b.sql
-	}
-
-	switch b.sqlType {
-	case selectEnum:
-		b.sql = b.getSQLForSelect()
-		break
-	case insertEnum:
-		b.sql = b.getSQLForInsert()
-		break
-	case updateEnum:
-		b.sql = b.getSQLForUpdate()
-		break
-	}
-
 	return b.sql
 }
 
@@ -316,166 +184,8 @@ func (b *Builder) removePart(e partEnum) bool {
 	return r > -1
 }
 
-func (b *Builder) add(p part) {
-	//b.init()
-	ok, tmp := b.getPart(p.getPartEnum())
-	enum := p.getPartEnum()
-	switch enum {
-	case selectPartEnum:
-		tmp = p
-		break
-	case fromPartEnum, insertPartEnum:
-		if !ok {
-			tmp = p
-		} else {
-			f := tmp.(fromPartSQL)
-			f.parts = append(f.parts, p.(fromPartSQL).parts...)
-			tmp = f
-		}
-		break
-	case joinPartEnum:
-		if tmp == nil {
-			tmp = p
-		} else {
-			j := tmp.(joinPartSQL)
-			j.parts = append(j.parts, p.(joinPartSQL).parts...)
-			tmp = j
-		}
-		break
-	case wherePartEnum:
-		if !ok {
-			tmp = p
-		} else {
-			j := tmp.(partSQL)
-			j.parts = append(j.parts, p.(partSQL).parts...)
-			tmp = j
-		}
-		break
-	case orderByASCPartEnum:
-		if tmp == nil {
-			tmp = p
-		} else {
-			j := tmp.(partSQL)
-			j.parts = append(j.parts, strings.Join(p.(partSQL).parts, ","))
-			tmp = j
-		}
-		break
-	case orderByDESCPartEnum:
-		if !ok {
-			tmp = p
-		} else {
-			j := tmp.(partSQL)
-			j.parts = append(j.parts, strings.Join(p.(partSQL).parts, ","))
-			tmp = j
-		}
-		break
-	case columnsPartEnum:
-		if !ok {
-			tmp = p
-		} else {
-			j := tmp.(insertValuePartSQL)
-			j.parts = append(j.parts, p.(insertValuePartSQL).parts...)
-			tmp = j
-		}
-		break
+func getPlaceHolder(consecutive int) string {
 
-	}
-
-	b.sqlParts = append(b.sqlParts, tmp)
-}
-
-func (b *Builder) addJoin(e joinEnum, f, j, a, c string) {
-	p := joinPartSQL{part: joinPartEnum}
-	if p.parts == nil {
-		p.parts = make([]join, 1)
-	}
-	p.parts[0] = join{join: e, fromAlias: f, joinTable: j, joinAlias: a, joinCondition: c}
-	b.add(p)
-}
-
-func (b *Builder) getSQLForSelect() string {
-
-	var q string
-
-	if ok, bSelect := b.getPart(selectPartEnum); ok {
-		q = "SELECT " + strings.Join(bSelect.(partSQL).parts, ", ") + " "
-	}
-
-	if ok, bFrom := b.getPart(fromPartEnum); ok {
-		q += "FROM " + bFrom.(fromPartSQL).getFrom() + " "
-	}
-
-	if ok, bJoin := b.getPart(joinPartEnum); ok {
-		q += bJoin.(joinPartSQL).getJoin() + " "
-	}
-
-	if ok, bWhere := b.getPart(wherePartEnum); ok {
-		q += "WHERE " + bWhere.(partSQL).getWhere()
-	}
-
-	existOrder := false
-
-	if ok, bOrder := b.getPart(orderByASCPartEnum); ok {
-		q += "ORDER BY " + bOrder.(partSQL).getOrderBy() + " ASC "
-		existOrder = true
-	}
-
-	if ok, bOrder := b.getPart(orderByDESCPartEnum); ok {
-		if existOrder {
-			q += ", "
-		} else {
-			q += "ORDER BY "
-		}
-		q += bOrder.(partSQL).getOrderBy() + " DESC "
-	}
-
-	return q
-
-}
-
-func (b *Builder) getSQLForInsert() string {
-
-	q := "INSERT INTO "
-
-	if ok, bFrom := b.getPart(insertPartEnum); ok {
-		q += bFrom.(fromPartSQL).getFrom() + " "
-	}
-
-	if ok, bSelect := b.getPart(columnsPartEnum); ok {
-		cols := make([]string, len(bSelect.(insertValuePartSQL).parts))
-		vals := make([]string, len(cols))
-		for i, o := range bSelect.(insertValuePartSQL).parts {
-			cols[i] = o.name
-			vals[i] = o.parameter
-		}
-		q += "(" + strings.Join(cols, ", ") + ") "
-		q += "VALUES (" + strings.Join(vals, ", ") + ") "
-	}
-
-	return q
-
-}
-
-func (b *Builder) getSQLForUpdate() string {
-
-	q := "UPDATE "
-
-	if ok, bFrom := b.getPart(fromPartEnum); ok {
-		q += bFrom.(fromPartSQL).getFrom() + " SET "
-	}
-
-	if ok, bSelect := b.getPart(columnsPartEnum); ok {
-		p := make([]string, len(bSelect.(insertValuePartSQL).parts))
-		for i, o := range bSelect.(insertValuePartSQL).parts {
-			p[i] = o.name + " = " + o.parameter
-		}
-		q += strings.Join(p, ", ") + " "
-	}
-
-	if ok, bWhere := b.getPart(wherePartEnum); ok {
-		q += "WHERE " + bWhere.(partSQL).getWhere() + " "
-	}
-
-	return q
+	return "$" + strconv.Itoa(consecutive)
 
 }
