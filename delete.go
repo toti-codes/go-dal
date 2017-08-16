@@ -20,6 +20,10 @@ func (b *DeleteBuilder) Build() {
 	b.b.Build()
 }
 
+func (b *DeleteBuilder) GetBuilder() *Builder {
+	return b.b
+}
+
 func (b *DeleteBuilder) GetSQL() (q string) {
 
 	q = "DELETE FROM "

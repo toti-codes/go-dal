@@ -68,6 +68,10 @@ func (b *UpdateBuilder) Build() {
 	b.b.Build()
 }
 
+func (b *UpdateBuilder) GetBuilder() *Builder {
+	return b.b
+}
+
 func (b *UpdateBuilder) GetSQL() (q string) {
 
 	q = "UPDATE "

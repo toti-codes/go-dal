@@ -119,6 +119,10 @@ func (b *SelectBuilder) Build() {
 	b.b.Build()
 }
 
+func (b *SelectBuilder) GetBuilder() *Builder {
+	return b.b
+}
+
 func (b *SelectBuilder) GetSQL() (q string) {
 
 	q = "SELECT "

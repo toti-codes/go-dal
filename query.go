@@ -122,7 +122,8 @@ func (b *Builder) Build() (*Builder, error) {
 
 			iParam++
 		} else {
-			param = r.FindAllString(sql,sParam + 1)[sParam]
+			params := r.FindAllString(sql,1)
+			param = params[0]
 			param = strings.Replace(param, " :", ":", 1)
 			paramName := strings.Replace(param, ":", "", 1)
 			if _, ok := b.params[paramName]; !ok {

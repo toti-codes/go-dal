@@ -62,6 +62,10 @@ func (b *InsertBuilder) Build() {
 	b.b.Build()
 }
 
+func (b *InsertBuilder) GetBuilder() *Builder {
+	return b.b
+}
+
 func (b *InsertBuilder) GetSQL() (q string) {
 
 	q = "INSERT INTO "
