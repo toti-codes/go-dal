@@ -62,7 +62,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From("table_1").
-		InnerJoin(Join{ fromAlias:"table_1", joinTable:"table_2", joinCondition:"table_2.id = table_1.table_2_id"}).Build()
+		InnerJoin(Join{ FromAlias:"table_1", JoinTable:"table_2", JoinCondition:"table_2.id = table_1.table_2_id"}).Build()
 
 	expected := "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 " +
@@ -74,7 +74,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ fromAlias:"t1", joinTable:"table_2", joinCondition:"table_2.id = t1.table_2_id"}).Build()
+		InnerJoin(Join{ FromAlias:"t1", JoinTable:"table_2", JoinCondition:"table_2.id = t1.table_2_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -86,7 +86,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ fromAlias:"t1", joinTable:As("table_2", "t2"), joinCondition:"t2.id = t1.table_2_id"}).Build()
+		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -98,8 +98,8 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ fromAlias:"t1", joinTable:As("table_2", "t2"), joinCondition:"t2.id = t1.table_2_id"}).
-		InnerJoin(Join{ fromAlias:"t2", joinTable:As("table_3", "t3"), joinCondition:"t3.id = t2.table_3_id"}).Build()
+		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).
+		InnerJoin(Join{ FromAlias:"t2", JoinTable:As("table_3", "t3"), JoinCondition:"t3.id = t2.table_3_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -112,9 +112,9 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ fromAlias:"t1", joinTable:As("table_2", "t2"), joinCondition:"t2.id = t1.table_2_id"}).
-		LeftJoin(Join{ fromAlias:"t2", joinTable:As("table_3", "t3"), joinCondition:"t3.id = t2.table_3_id"}).
-		RightJoin(Join{ fromAlias:"t3", joinTable:As("table_4", "t4"), joinCondition:"t4.id = t3.table_4_id"}).Build()
+		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).
+		LeftJoin(Join{ FromAlias:"t2", JoinTable:As("table_3", "t3"), JoinCondition:"t3.id = t2.table_3_id"}).
+		RightJoin(Join{ FromAlias:"t3", JoinTable:As("table_4", "t4"), JoinCondition:"t4.id = t3.table_4_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -132,7 +132,7 @@ func TestQuerySelectGroupHaving(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From("table_1").
-		InnerJoin(Join{ fromAlias:"table_1", joinTable:"table_2", joinCondition:"table_2.id = table_1.table_2_id"}).
+		InnerJoin(Join{ FromAlias:"table_1", JoinTable:"table_2", JoinCondition:"table_2.id = table_1.table_2_id"}).
 		GroupBy("column_1").
 		Having("column_1 = ?").SetParameter(0, "first").Build()
 

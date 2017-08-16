@@ -76,7 +76,7 @@ func (p partSQL) getSQL() string {
 }
 
 type Join struct {
-	fromAlias, joinTable, joinCondition string
+	FromAlias, JoinTable, JoinCondition string
 }
 
 type joinContainer struct {
@@ -94,9 +94,9 @@ func (p joinPartSQL) getPartEnum() partEnum {
 
 func (p joinPartSQL) getSQL() (join string) {
 	for _, v := range p.parts {
-		join += " " + string(v.join) + " JOIN " + v.joinTable
-		if v.joinCondition != "" {
-			join += " ON " + v.joinCondition
+		join += " " + string(v.join) + " JOIN " + v.JoinTable
+		if v.JoinCondition != "" {
+			join += " ON " + v.JoinCondition
 		}
 	}
 	return
