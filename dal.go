@@ -15,10 +15,15 @@ type Connection struct {
 	db *sql.DB
 }
 
-type base interface {
-	Exec(b Builder) interface{}
-	Query(b Builder) []map[string]interface{}
-	QueryType(b Builder, t interface{})
+type ISession interface {
+	Scan(b Builder, v ...interface{}) error
+	Query(b Builder) ([]map[string]interface{}, error)
+	QueryArray(b Builder) ([][]interface{}, error)
+	QueryType(b Builder, o interface{}) error
+	FirstResult(b Builder) (map[string]interface{}, error)
+	FirstResultArray(b Builder) ([]interface{}, error)
+	FirstResultType(b Builder, o interface{}) error
+	Exec(b Builder) error
 }
 
 type handlerConn interface {

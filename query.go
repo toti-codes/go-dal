@@ -124,7 +124,8 @@ func (b *Builder) Build() (*Builder, error) {
 		} else {
 			params := r.FindAllString(sql,1)
 			param = params[0]
-			param = strings.Replace(param, " :", ":", 1)
+			r1, _ := regexp.Compile("[:][a-zA-Z0-9_\\-]+")
+			param =  r1.FindAllString(param, 1)[0]
 			paramName := strings.Replace(param, ":", "", 1)
 			if _, ok := b.params[paramName]; !ok {
 				return nil, fmt.Errorf("Can not find parameter with name %s", param[i])
