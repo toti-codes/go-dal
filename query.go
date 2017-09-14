@@ -13,11 +13,11 @@ type IBuilder interface {
 
 //Builder -
 type Builder struct {
-	b		 IBuilder
-	sqlType  sqlEnum
-	sql      string
-	sqlParts []part
-	params   map[interface{}]interface{}
+	b           IBuilder
+	sqlType     sqlEnum
+	sql         string
+	sqlParts    []part
+	params      map[interface{}]interface{}
 	finalParams []interface{}
 }
 
@@ -43,7 +43,7 @@ func (b *Builder) Select(columns ...string) *SelectBuilder {
 func (b *Builder) Insert(table string) *InsertBuilder {
 	sb := InsertBuilder{b: b}
 	b.b = &sb
-	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
+	b.sqlParts = []part{partSQL{part: tablePartEnum, parts: []string{table}}}
 
 	return &sb
 }
@@ -51,7 +51,7 @@ func (b *Builder) Insert(table string) *InsertBuilder {
 func (b *Builder) Update(table string) *UpdateBuilder {
 	sb := UpdateBuilder{b: b}
 	b.b = &sb
-	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
+	b.sqlParts = []part{partSQL{part: tablePartEnum, parts: []string{table}}}
 
 	return &sb
 }
@@ -59,7 +59,7 @@ func (b *Builder) Update(table string) *UpdateBuilder {
 func (b *Builder) Delete(table string) *DeleteBuilder {
 	sb := DeleteBuilder{b: b}
 	b.b = &sb
-	b.sqlParts = []part {partSQL{part: tablePartEnum, parts: []string { table }} }
+	b.sqlParts = []part{partSQL{part: tablePartEnum, parts: []string{table}}}
 
 	return &sb
 }
@@ -68,7 +68,7 @@ func (b *Builder) SQL(sql string) *SQLBuilder {
 	sb := SQLBuilder{b: b}
 	b.b = &sb
 
-	b.sqlParts = []part{ partSQL{part: tablePartEnum, parts: []string{sql}} }
+	b.sqlParts = []part{partSQL{part: tablePartEnum, parts: []string{sql}}}
 
 	return &sb
 }
@@ -95,48 +95,10 @@ func (b *Builder) Build() (*Builder, error) {
 
 	sql := b.b.GetSQL()
 
-	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
+	sql, err := b.build(sql)
 
-	matches := r.FindAllStringSubmatchIndex(sql, -1)
-
-	var iParam, sParam int
-
-	for i, v := range matches {
-		param := "?"
-		if v[1] - 1 == v[0] {
-			if _, ok := b.params[iParam]; !ok {
-				error := ""
-				if iParam == 0 {
-					if _, ok := b.params[1]; !ok {
-						error = "The first index param must be 0 or 1"
-					}
-				} else {
-					error = "Can not find parameter with index " + strconv.Itoa(iParam)
-				}
-
-				if error != "" {
-					return nil, fmt.Errorf(error)
-				}
-			}
-			b.finalParams = append(b.finalParams, b.params[iParam])
-
-			iParam++
-		} else {
-			params := r.FindAllString(sql,1)
-			param = params[0]
-			r1, _ := regexp.Compile("[:][a-zA-Z0-9_\\-]+")
-			param =  r1.FindAllString(param, 1)[0]
-			paramName := strings.Replace(param, ":", "", 1)
-			if _, ok := b.params[paramName]; !ok {
-				return nil, fmt.Errorf("Can not find parameter with name %s", param[i])
-			}
-
-			b.finalParams = append(b.finalParams, b.params[paramName])
-
-			sParam++
-		}
-
-		sql = strings.Replace(sql, param, getPlaceHolder(iParam + sParam), 1)
+	if err != nil {
+		return b, err
 	}
 
 	b.sql = sql
@@ -190,4 +152,55 @@ func getPlaceHolder(consecutive int) string {
 
 	return "$" + strconv.Itoa(consecutive)
 
+}
+
+func (b *Builder) build(sql string) (string, error) {
+
+	b.finalParams = make([]interface{}, 0)
+
+	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
+
+	matches := r.FindAllStringSubmatchIndex(sql, -1)
+
+	var iParam, sParam int
+
+	for i, v := range matches {
+		param := "?"
+		if v[1]-1 == v[0] {
+			if _, ok := b.params[iParam]; !ok {
+				error := ""
+				if iParam == 0 {
+					if _, ok := b.params[1]; !ok {
+						error = "The first index param must be 0 or 1"
+					}
+				} else {
+					error = "Can not find parameter with index " + strconv.Itoa(iParam)
+				}
+
+				if error != "" {
+					return "", fmt.Errorf(error)
+				}
+			}
+			b.finalParams = append(b.finalParams, b.params[iParam])
+
+			iParam++
+		} else {
+			params := r.FindAllString(sql, 1)
+			param = params[0]
+			r1, _ := regexp.Compile("[:][a-zA-Z0-9_\\-]+")
+			param = r1.FindAllString(param, 1)[0]
+			paramName := strings.Replace(param, ":", "", 1)
+			if _, ok := b.params[paramName]; !ok {
+				return "", fmt.Errorf("Can not find parameter with name %s", param[i])
+			}
+
+			b.finalParams = append(b.finalParams, b.params[paramName])
+
+			sParam++
+		}
+
+		sql = strings.Replace(sql, param, getPlaceHolder(iParam+sParam), 1)
+	}
+
+	return sql, nil
 }

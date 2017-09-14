@@ -166,6 +166,45 @@ func (b *SelectBuilder) GetSQL() (q string) {
 	return
 }
 
+func (b *SelectBuilder) GetCountSQL() (q string) {
+
+	q = "SELECT "
+
+	if b.isDistinct {
+		q += "DISTINCT "
+	}
+
+	q += "COUNT(1) "
+
+	if ok, bFrom := b.b.getPart(fromPartEnum); ok {
+		q += bFrom.getSQL()
+	}
+
+	if ok, bJoin := b.b.getPart(joinPartEnum); ok {
+		q += bJoin.(joinPartSQL).getSQL()
+	}
+
+	if ok, bWhere := b.b.getPart(wherePartEnum); ok {
+		q += bWhere.(wherePartSQL).getSQL()
+	}
+
+	if ok, bGroup := b.b.getPart(groupPartEnum); ok {
+		q += bGroup.getSQL()
+	}
+
+	if ok, bHaving := b.b.getPart(havingPartEnum); ok {
+		q += bHaving.getSQL()
+	}
+
+	if ok, bJoin := b.b.getPart(orderByPartEnum); ok {
+		q += bJoin.(orderPartSQL).getSQL()
+	}
+
+	q, _ = b.b.build(q)
+
+	return
+}
+
 func (b *SelectBuilder) SetParameter(p, v interface{}) *SelectBuilder {
 	b.b.SetParameter(p, v)
 
