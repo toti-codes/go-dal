@@ -10,6 +10,7 @@ INSERT Section
 
 type InsertBuilder struct {
 	b *Builder
+	returnLastId bool
 }
 
 func (b *InsertBuilder) Column(column, parameter string) *InsertBuilder {
@@ -58,6 +59,12 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	return b
 }
 
+func (b *InsertBuilder) LastInsertId() *InsertBuilder {
+	b.returnLastId = true
+
+	return b
+}
+
 func (b *InsertBuilder) Build() {
 	b.b.Build()
 }
@@ -83,6 +90,10 @@ func (b *InsertBuilder) GetSQL() (q string) {
 		}
 		q += "(" + strings.Join(cols, ", ") + ") "
 		q += "VALUES (" + strings.Join(vals, ", ") + ")"
+	}
+
+	if b.returnLastId {
+		q += " RETURNING id"
 	}
 
 	return

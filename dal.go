@@ -201,7 +201,7 @@ func countQuery(handler handlerConn, b SelectBuilder) ([]map[string]interface{},
 		return make([]map[string]interface{}, 0), 0, nil
 	}
 
-	rows, err := handler.Query(b.GetSQL(), b.b.GetParameters()...)
+	rows, err := handler.Query(b.b.GetSQL(), b.b.GetParameters()...)
 
 	if err != nil {
 		return nil, 0, err
@@ -242,7 +242,7 @@ func countQueryArray(handler handlerConn, b SelectBuilder) ([][]interface{}, int
 		return make([][]interface{}, 0), 0, nil
 	}
 
-	rows, err := handler.Query(b.GetSQL(), b.b.GetParameters()...)
+	rows, err := handler.Query(b.b.GetSQL(), b.b.GetParameters()...)
 
 	if err != nil {
 		return nil, 0, err

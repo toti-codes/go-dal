@@ -160,7 +160,10 @@ func (b *SelectBuilder) GetSQL() (q string) {
 	}
 
 	if b.isLimitQuery() {
-		q += " OFFSET " + strconv.Itoa(int(b.firstResult)) + " LIMIT " + strconv.Itoa(int(b.maxResults))
+		q += " LIMIT " + strconv.Itoa(int(b.maxResults))
+		if b.firstResult > 0 {
+			q += " OFFSET " + strconv.Itoa(int(b.firstResult) - 1)
+		}
 	}
 
 	return
@@ -194,10 +197,6 @@ func (b *SelectBuilder) GetCountSQL() (q string) {
 
 	if ok, bHaving := b.b.getPart(havingPartEnum); ok {
 		q += bHaving.getSQL()
-	}
-
-	if ok, bJoin := b.b.getPart(orderByPartEnum); ok {
-		q += bJoin.(orderPartSQL).getSQL()
 	}
 
 	q, _ = b.b.build(q)
