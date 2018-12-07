@@ -53,9 +53,8 @@ func (m *connectionManager) GetTransaction() (*Transaction, error) {
 func (m *connectionManager) configure(name string, config map[string]string) error {
 
 	m.Lock()
-
-	//conn, err := sql.Open("postgres", "dbname=doous_emite_cloud_03 user=emite_user password=123456 sslmode=disable")
-	conn, err := sql.Open("postgres", fmt.Sprintf("dbname=%s user=%s password=%s sslmode=%s", config["database"], config["user"], config["password"], config["ssl"]))
+	
+	conn, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", config["host"], config["port"], config["database"], config["user"], config["password"], config["ssl"]))
 
 	if err != nil {
 		return err
