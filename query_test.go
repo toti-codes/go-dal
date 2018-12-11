@@ -201,6 +201,12 @@ func TestQueryTestSelectLimit(t *testing.T) {
 	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 OFFSET 10 LIMIT 20", strings.ToUpper(b.GetSQL()))
 }
 
+type testDB struct {
+	Id int64 `db:"id, autoincrement"`
+	Name string `db:"name"`
+	LastName string `db:"last_name"`
+}
+
 func TestQueryInsert(t *testing.T) {
 
 	b := NewBuilder()
@@ -221,6 +227,16 @@ func TestQueryInsert(t *testing.T) {
 
 	assert.Equal(t, "INSERT INTO TABLE_1(COLUMN_1, COLUMN_2, COLUMN_3, COLUMN_4) VALUES ($1, $2, $3, $4::BIT)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", "third", "fourth"}, b.GetParameters())
+
+	persist := testDB{Name:"first", LastName:"second"}
+
+	b = NewBuilder()
+
+	b.Insert("table_persist").Type(persist).LastInsertId().Build()
+
+	assert.Equal(t, "INSERT INTO TABLE_PERSIST(NAME, LAST_NAME) VALUES ($1, $2) RETURNING ID", strings.ToUpper(b.GetSQL()))
+	assert.Equal(t, []interface{}{"first", "second"}, b.GetParameters())
+
 
 }
 
@@ -266,5 +282,14 @@ func TestQueryUpdate(t *testing.T) {
 
 	assert.Equal(t, "UPDATE TABLE_1 SET COLUMN_1 = $1, COLUMN_2 = $2 WHERE (ID = $3)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", 10}, b.GetParameters())
+
+	persist := testDB{Id: 1, Name:"first", LastName:"second"}
+
+	b = NewBuilder()
+
+	b.Update("table_persist").Type(persist).Build()
+
+	assert.Equal(t, "UPDATE TABLE_PERSIST SET NAME = $1, LAST_NAME = $2 WHERE (ID = $3)", strings.ToUpper(b.GetSQL()))
+	assert.Equal(t, []interface{}{"first", "second", int64(1)}, b.GetParameters())
 
 }

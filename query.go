@@ -191,7 +191,7 @@ func (b *Builder) build(sql string) (string, error) {
 			param = r1.FindAllString(param, 1)[0]
 			paramName := strings.Replace(param, ":", "", 1)
 			if _, ok := b.params[paramName]; !ok {
-				return "", fmt.Errorf("Can not find parameter with name %s", param[i])
+				return "", fmt.Errorf("can not find parameter with name %s", params[i])
 			}
 
 			b.finalParams = append(b.finalParams, b.params[paramName])

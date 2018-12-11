@@ -1,6 +1,7 @@
 package dal
 
 import (
+	"reflect"
 	"strings"
 )
 
@@ -30,6 +31,36 @@ func (b *InsertBuilder) Column(column, parameter string) *InsertBuilder {
 	} else {
 		b.b.sqlParts = append(b.b.sqlParts, p)
 	}
+
+	return b
+}
+
+func (b *InsertBuilder) Type(entity interface{}) *InsertBuilder {
+	e := reflect.ValueOf(entity)
+	var columnNames []string
+
+	count := 0
+	for i := 0; i < e.NumField(); i++ {
+		columnsConfig := strings.Split(e.Type().Field(i).Tag.Get("db"), ", ")
+		columnName := columnsConfig[0]
+
+		if columnName == "" {
+			columnName = e.Type().Field(i).Name
+		}
+
+		value := e.Field(i).Interface()
+		if columnName == "id" {
+			value = int64(value.(int64))
+		}
+
+		if len(columnsConfig) > 1 && columnsConfig[1] != "autoincrement" || len(columnsConfig) == 1 {
+			columnNames = append(columnNames, columnName)
+			b.SetParameter(count, value)
+			count += 1
+		}
+	}
+
+	b.Columns(columnNames...)
 
 	return b
 }

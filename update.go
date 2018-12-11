@@ -1,6 +1,9 @@
 package dal
 
-import "strings"
+import (
+	"reflect"
+	"strings"
+)
 
 /**
 UPDATE Section
@@ -52,6 +55,41 @@ func (b *UpdateBuilder) Sets(columns ...string) *UpdateBuilder {
 	} else {
 		b.b.sqlParts = append(b.b.sqlParts, p)
 	}
+
+	return b
+}
+
+func (b *UpdateBuilder) Type(entity interface{}) *UpdateBuilder {
+	e := reflect.ValueOf(entity)
+	var columnNames []string
+
+	count := 0
+	var id interface{}
+	for i := 0; i < e.NumField(); i++ {
+		columnsConfig := strings.Split(e.Type().Field(i).Tag.Get("db"), ", ")
+		columnName := columnsConfig[0]
+
+		if columnName == "" {
+			columnName = e.Type().Field(i).Name
+		}
+
+		value := e.Field(i).Interface()
+		if columnName == "id" {
+			value = int64(value.(int64))
+			id = value
+		}
+
+		if len(columnsConfig) > 1 && columnsConfig[1] != "autoincrement" || len(columnsConfig) == 1 {
+			columnNames = append(columnNames, columnName)
+			b.SetParameter(count, value)
+			count += 1
+		}
+	}
+
+	b.Sets(columnNames...)
+
+	b.Where("id = ?")
+	b.SetParameter(count, id)
 
 	return b
 }
