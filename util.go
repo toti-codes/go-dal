@@ -80,7 +80,7 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 			}
 			if tagName == "" {
 				// no tag, but we can record the field name
-				tag = camelCaseToSnakeCase(field.Name)
+				tagName = camelCaseToSnakeCase(field.Name)
 			}
 			fieldValue := value.Field(i)
 			if _, ok := m[tag]; !ok {
