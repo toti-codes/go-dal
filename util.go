@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"reflect"
+	"strings"
 	"unicode"
 )
 
@@ -53,11 +54,31 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 				continue
 			}
 			tag := field.Tag.Get("db")
-			if tag == "-" {
+			tags := strings.Split(tag, ",")
+			tagName := ""
+
+			for _, t := range tags {
+				if strings.Contains(t, "=") {
+					split := strings.Split(t, "=")
+
+					split[0] = strings.TrimSpace(split[0])
+					split[1] = strings.TrimSpace(split[1])
+
+					if strings.ToLower(split[0]) == "name" {
+						tagName = split[1]
+					}
+				}
+			}
+
+			if tagName == "" {
+				tagName = strings.TrimSpace(tags[0])
+			}
+
+			if tagName == "-" {
 				// ignore
 				continue
 			}
-			if tag == "" {
+			if tagName == "" {
 				// no tag, but we can record the field name
 				tag = camelCaseToSnakeCase(field.Name)
 			}
