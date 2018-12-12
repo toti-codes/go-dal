@@ -84,7 +84,7 @@ func structValue(m map[string]reflect.Value, value reflect.Value) {
 			}
 			fieldValue := value.Field(i)
 			if _, ok := m[tag]; !ok {
-				m[tag] = fieldValue
+				m[tagName] = fieldValue
 			}
 			structValue(m, fieldValue)
 		}
