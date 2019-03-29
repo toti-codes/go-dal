@@ -7,24 +7,24 @@ import (
 
 /**
 INSERT Section
- */
+*/
 
 type InsertBuilder struct {
-	b *Builder
+	b            *Builder
 	returnLastId bool
 }
 
 func (b *InsertBuilder) Column(column, parameter string) *InsertBuilder {
-	p := columnPartSQL{part:columnsPartEnum}
+	p := columnPartSQL{part: columnsPartEnum}
 
 	if p.parts == nil {
 		p.parts = make([]columnSQL, 1)
 	}
-	p.parts[0] = columnSQL{name: column, parameter:parameter}
+	p.parts[0] = columnSQL{name: column, parameter: parameter}
 
 	if ok, part := b.b.getPart(columnsPartEnum); ok {
 		parts := part.(columnPartSQL).parts
-		p.parts = append(parts, columnSQL{name: column, parameter:parameter})
+		p.parts = append(parts, columnSQL{name: column, parameter: parameter})
 
 		b.b.removePart(columnsPartEnum)
 		b.b.sqlParts = append(b.b.sqlParts, p)
@@ -53,7 +53,7 @@ func (b *InsertBuilder) Type(entity interface{}) *InsertBuilder {
 			value = int64(value.(int64))
 		}
 
-		if len(columnsConfig) > 1 && columnsConfig[1] != "autoincrement" || len(columnsConfig) == 1 {
+		if len(columnsConfig) > 1 && (columnsConfig[1] != "autoincrement" && columnsConfig[1] != "omitted") || len(columnsConfig) == 1 {
 			columnNames = append(columnNames, columnName)
 			b.SetParameter(count, value)
 			count += 1
@@ -70,11 +70,11 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 		return b
 	}
 
-	p := columnPartSQL{part:columnsPartEnum}
+	p := columnPartSQL{part: columnsPartEnum}
 
 	p.parts = make([]columnSQL, len(columns))
 	for c, i := range columns {
-		p.parts[c] = columnSQL{name:i, parameter:"?"}
+		p.parts[c] = columnSQL{name: i, parameter: "?"}
 	}
 
 	if ok, part := b.b.getPart(columnsPartEnum); ok {
