@@ -9,7 +9,7 @@ var (
 	_ SessionHandler = (*Session)(nil)
 )
 
-type SessionHandler interface { }
+type SessionHandler interface{}
 
 type Connection struct {
 	db *sql.DB
@@ -41,7 +41,7 @@ type Session struct {
 }
 
 type Transaction struct {
-	tx *sql.Tx
+	tx      *sql.Tx
 	handler handlerConn
 }
 
@@ -77,8 +77,8 @@ func (tx *Transaction) Rollback() error {
 }
 
 /**
-	SCAN
- */
+SCAN
+*/
 
 func (s *Session) Scan(b Builder, v ...interface{}) error {
 	return scan(s.handler, b, v...)
@@ -89,8 +89,8 @@ func (t *Transaction) Scan(b Builder, v ...interface{}) error {
 }
 
 /**
-	COUNT QUERY
- */
+COUNT QUERY
+*/
 
 func (s *Session) CountQuery(b SelectBuilder) ([]map[string]interface{}, int64, error) {
 	return countQuery(s.handler, b)
@@ -117,8 +117,8 @@ func (t *Transaction) CountQueryType(b SelectBuilder, o interface{}) (int64, err
 }
 
 /**
-	QUERY
- */
+QUERY
+*/
 
 func (s *Session) Query(b Builder) ([]map[string]interface{}, error) {
 	return query(s.handler, b)
@@ -145,8 +145,8 @@ func (t *Transaction) QueryType(b Builder, o interface{}) error {
 }
 
 /**
-	FIRST
- */
+FIRST
+*/
 
 func (s *Session) FirstResult(b Builder) (map[string]interface{}, error) {
 	return firstResult(s.handler, b)
@@ -173,8 +173,8 @@ func (t *Transaction) FirstResultType(b Builder, o interface{}) error {
 }
 
 /**
-	Exec
- */
+Exec
+*/
 
 func (s *Session) Exec(b Builder) error {
 	return exec(s.handler, b)
@@ -185,8 +185,8 @@ func (t *Transaction) Exec(b Builder) error {
 }
 
 /**
-	Private Methods
- */
+Private Methods
+*/
 
 func scan(handler handlerConn, b Builder, v ...interface{}) error {
 	return handler.QueryRow(b.GetSQL(), b.GetParameters()...).Scan(v...)
@@ -261,7 +261,7 @@ func countQueryArray(handler handlerConn, b SelectBuilder) ([][]interface{}, int
 	result := make([][]interface{}, 0)
 
 	for rows.Next() {
-		record := make([]interface{}, 1)
+		record := make([]interface{}, len(columns))
 
 		rows.Scan(scanArgs...)
 		for i, _ := range columns {
@@ -353,7 +353,7 @@ func queryArray(handler handlerConn, b Builder) ([][]interface{}, error) {
 	result := make([][]interface{}, 0)
 
 	for rows.Next() {
-		record := make([]interface{}, 1)
+		record := make([]interface{}, len(columns))
 
 		rows.Scan(scanArgs...)
 		for i, _ := range columns {
