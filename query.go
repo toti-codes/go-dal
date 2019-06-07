@@ -158,7 +158,7 @@ func (b *Builder) build(sql string) (string, error) {
 
 	b.finalParams = make([]interface{}, 0)
 
-	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z_\\-]+")
+	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
 
 	matches := r.FindAllStringSubmatchIndex(sql, -1)
 
@@ -187,7 +187,7 @@ func (b *Builder) build(sql string) (string, error) {
 		} else {
 			params := r.FindAllString(sql, 1)
 			param = params[0]
-			r1, _ := regexp.Compile("[:][a-zA-Z_\\-]+")
+			r1, _ := regexp.Compile("[:][a-zA-Z0-9_\\-]+")
 			param = r1.FindAllString(param, 1)[0]
 			paramName := strings.Replace(param, ":", "", 1)
 			if _, ok := b.params[paramName]; !ok {

@@ -1,6 +1,7 @@
 package dal
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 )
@@ -41,23 +42,43 @@ func (b *InsertBuilder) Type(entity interface{}) *InsertBuilder {
 
 	count := 0
 	for i := 0; i < e.NumField(); i++ {
-		columnsConfig := strings.Split(e.Type().Field(i).Tag.Get("db"), ", ")
+		dbConfig := strings.Replace(e.Type().Field(i).Tag.Get("db"), " ", "", -1)
+		columnsConfig := strings.Split(dbConfig, ",")
 		columnName := columnsConfig[0]
+		value := e.Field(i).Interface()
+
+		config := make(map[string]bool)
+		for _, v := range columnsConfig {
+			config[v] = true
+		}
+
+		if value == nil || config["autoincrement"] || config["omitted"] {
+			continue
+		}
 
 		if columnName == "" {
 			columnName = e.Type().Field(i).Name
 		}
 
-		value := e.Field(i).Interface()
 		if columnName == "id" {
 			value = int64(value.(int64))
 		}
 
-		if len(columnsConfig) > 1 && (columnsConfig[1] != "autoincrement" && columnsConfig[1] != "omitted") || len(columnsConfig) == 1 {
-			columnNames = append(columnNames, columnName)
-			b.SetParameter(count, value)
-			count += 1
+		if config["json"] || config["jsonb"] {
+			if reflect.ValueOf(value).IsNil() {
+				continue
+			}
+			if byts, err := json.Marshal(value); err != nil {
+				panic("la columna: " + columnName + " no contiene un valor válido")
+			} else {
+				value = string(byts)
+			}
 		}
+
+		columnNames = append(columnNames, columnName)
+		b.SetParameter(count, value)
+		count += 1
+
 	}
 
 	b.Columns(columnNames...)
