@@ -4,8 +4,9 @@ type SQLBuilder struct {
 	b *Builder
 }
 
-func (b *SQLBuilder) Build() {
-	b.b.Build()
+func (b *SQLBuilder) Build() error {
+	_, err := b.b.Build()
+	return err
 }
 
 func (b *SQLBuilder) GetSQL() (q string) {
