@@ -9,6 +9,11 @@ func (b *SQLBuilder) Build() error {
 	return err
 }
 
+func (b *SQLBuilder) RawBuild() error {
+	_, err := b.b.RawBuild()
+	return err
+}
+
 func (b *SQLBuilder) GetSQL() (q string) {
 
 	if ok, bSelect := b.b.getPart(tablePartEnum); ok {
