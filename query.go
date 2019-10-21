@@ -170,7 +170,7 @@ func (b *Builder) build(sql string) (string, error) {
 
 	b.finalParams = make([]interface{}, 0)
 
-	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
+	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z_\\-]+")
 
 	matches := r.FindAllStringSubmatchIndex(sql, -1)
 
