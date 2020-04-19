@@ -1,4 +1,4 @@
-module sunat-go
+module github.com/cloudoti/sunat-go
 
 go 1.13
 
