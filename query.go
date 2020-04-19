@@ -88,6 +88,18 @@ func (b *Builder) GetParameters() []interface{} {
 	return b.finalParams
 }
 
+func (b *Builder) RawBuild() (*Builder, error) {
+	if b.sql != "" {
+		return nil, fmt.Errorf("Query was already build")
+	}
+
+	sql := b.b.GetSQL()
+
+	b.sql = sql
+
+	return b, nil
+}
+
 func (b *Builder) Build() (*Builder, error) {
 	if b.sql != "" {
 		return nil, fmt.Errorf("Query was already build")
@@ -158,7 +170,7 @@ func (b *Builder) build(sql string) (string, error) {
 
 	b.finalParams = make([]interface{}, 0)
 
-	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z0-9_\\-]+")
+	r, _ := regexp.Compile("\\?|[^:][:][a-zA-Z_\\-]+")
 
 	matches := r.FindAllStringSubmatchIndex(sql, -1)
 
