@@ -2,8 +2,8 @@ package dal
 
 import (
 	"github.com/stretchr/testify/assert"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestQuerySelectFrom(t *testing.T) {
@@ -33,7 +33,7 @@ func TestQuerySelectWhere(t *testing.T) {
 	b := NewBuilder()
 
 	b.Select("column_1", "column_2", "column_3").From("table_1").Where("column_1 = ?").
-	SetParameter(0, "first").Build()
+		SetParameter(0, "first").Build()
 
 	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 WHERE (COLUMN_1 = $1)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first"}, b.GetParameters())
@@ -41,7 +41,7 @@ func TestQuerySelectWhere(t *testing.T) {
 	b = NewBuilder()
 
 	b.Select("column_1", "column_2", "column_3").From("table_1").Where("column_1 = ?").Where("column_2 = ?").
-	SetParameter(0, "first").SetParameter(1, "second").Build()
+		SetParameter(0, "first").SetParameter(1, "second").Build()
 
 	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 WHERE ((COLUMN_1 = $1) AND (COLUMN_2 = $2))", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second"}, b.GetParameters())
@@ -49,7 +49,7 @@ func TestQuerySelectWhere(t *testing.T) {
 	b = NewBuilder()
 
 	b.Select("column_1", "column_2", "column_3").From("table_1").Where("column_1 = ?").Where("column_2 = ?").OrWhere("column_3 = ?").
-	SetParameter(0, "first").SetParameter(1, "second").SetParameter(2, "third").Build()
+		SetParameter(0, "first").SetParameter(1, "second").SetParameter(2, "third").Build()
 
 	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 WHERE ((COLUMN_1 = $1) AND (COLUMN_2 = $2) OR (COLUMN_3 = $3))", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", "third"}, b.GetParameters())
@@ -62,7 +62,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From("table_1").
-		InnerJoin(Join{ FromAlias:"table_1", JoinTable:"table_2", JoinCondition:"table_2.id = table_1.table_2_id"}).Build()
+		InnerJoin(Join{FromAlias: "table_1", JoinTable: "table_2", JoinCondition: "table_2.id = table_1.table_2_id"}).Build()
 
 	expected := "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 " +
@@ -74,7 +74,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ FromAlias:"t1", JoinTable:"table_2", JoinCondition:"table_2.id = t1.table_2_id"}).Build()
+		InnerJoin(Join{FromAlias: "t1", JoinTable: "table_2", JoinCondition: "table_2.id = t1.table_2_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -86,7 +86,7 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).Build()
+		InnerJoin(Join{FromAlias: "t1", JoinTable: As("table_2", "t2"), JoinCondition: "t2.id = t1.table_2_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -98,8 +98,8 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).
-		InnerJoin(Join{ FromAlias:"t2", JoinTable:As("table_3", "t3"), JoinCondition:"t3.id = t2.table_3_id"}).Build()
+		InnerJoin(Join{FromAlias: "t1", JoinTable: As("table_2", "t2"), JoinCondition: "t2.id = t1.table_2_id"}).
+		InnerJoin(Join{FromAlias: "t2", JoinTable: As("table_3", "t3"), JoinCondition: "t3.id = t2.table_3_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -112,9 +112,9 @@ func TestQuerySelectJoin(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From(As("table_1", "t1")).
-		InnerJoin(Join{ FromAlias:"t1", JoinTable:As("table_2", "t2"), JoinCondition:"t2.id = t1.table_2_id"}).
-		LeftJoin(Join{ FromAlias:"t2", JoinTable:As("table_3", "t3"), JoinCondition:"t3.id = t2.table_3_id"}).
-		RightJoin(Join{ FromAlias:"t3", JoinTable:As("table_4", "t4"), JoinCondition:"t4.id = t3.table_4_id"}).Build()
+		InnerJoin(Join{FromAlias: "t1", JoinTable: As("table_2", "t2"), JoinCondition: "t2.id = t1.table_2_id"}).
+		LeftJoin(Join{FromAlias: "t2", JoinTable: As("table_3", "t3"), JoinCondition: "t3.id = t2.table_3_id"}).
+		RightJoin(Join{FromAlias: "t3", JoinTable: As("table_4", "t4"), JoinCondition: "t4.id = t3.table_4_id"}).Build()
 
 	expected = "SELECT COLUMN_1, COLUMN_2, COLUMN_3 " +
 		"FROM TABLE_1 T1 " +
@@ -132,7 +132,7 @@ func TestQuerySelectGroupHaving(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").
 		From("table_1").
-		InnerJoin(Join{ FromAlias:"table_1", JoinTable:"table_2", JoinCondition:"table_2.id = table_1.table_2_id"}).
+		InnerJoin(Join{FromAlias: "table_1", JoinTable: "table_2", JoinCondition: "table_2.id = table_1.table_2_id"}).
 		GroupBy("column_1").
 		Having("column_1 = ?").SetParameter(0, "first").Build()
 
@@ -198,12 +198,12 @@ func TestQueryTestSelectLimit(t *testing.T) {
 
 	b.Select("column_1", "column_2", "column_3").From("table_1").FirstResult(10).MaxResult(20).Build()
 
-	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 OFFSET 10 LIMIT 20", strings.ToUpper(b.GetSQL()))
+	assert.Equal(t, "SELECT COLUMN_1, COLUMN_2, COLUMN_3 FROM TABLE_1 LIMIT 20 OFFSET 9", strings.ToUpper(b.GetSQL()))
 }
 
 type testDB struct {
-	Id int64 `db:"id, autoincrement"`
-	Name string `db:"name"`
+	Id       int64  `db:"id, autoincrement"`
+	Name     string `db:"name"`
 	LastName string `db:"last_name"`
 }
 
@@ -217,7 +217,6 @@ func TestQueryInsert(t *testing.T) {
 	assert.Equal(t, "INSERT INTO TABLE_1(COLUMN_1, COLUMN_2, COLUMN_3) VALUES ($1, $2, $3)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", "third"}, b.GetParameters())
 
-
 	b = NewBuilder()
 
 	b.Insert("table_1").
@@ -228,7 +227,7 @@ func TestQueryInsert(t *testing.T) {
 	assert.Equal(t, "INSERT INTO TABLE_1(COLUMN_1, COLUMN_2, COLUMN_3, COLUMN_4) VALUES ($1, $2, $3, $4::BIT)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", "third", "fourth"}, b.GetParameters())
 
-	persist := testDB{Name:"first", LastName:"second"}
+	persist := testDB{Name: "first", LastName: "second"}
 
 	b = NewBuilder()
 
@@ -236,7 +235,6 @@ func TestQueryInsert(t *testing.T) {
 
 	assert.Equal(t, "INSERT INTO TABLE_PERSIST(NAME, LAST_NAME) VALUES ($1, $2) RETURNING ID", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second"}, b.GetParameters())
-
 
 }
 
@@ -283,7 +281,7 @@ func TestQueryUpdate(t *testing.T) {
 	assert.Equal(t, "UPDATE TABLE_1 SET COLUMN_1 = $1, COLUMN_2 = $2 WHERE (ID = $3)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", 10}, b.GetParameters())
 
-	persist := testDB{Id: 1, Name:"first", LastName:"second"}
+	persist := testDB{Id: 1, Name: "first", LastName: "second"}
 
 	b = NewBuilder()
 

@@ -1,10 +1,11 @@
 package dal
 
 import (
-	"fmt"
-	"sync"
 	"database/sql"
+	"fmt"
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
+	"sync"
 )
 
 const UNIQUE_CONNECTION = "DAL_UNIQUE"
@@ -13,7 +14,7 @@ var once sync.Once
 var instance *connectionManager
 
 type connectionManager struct {
-	configured bool
+	configured  bool
 	connections map[string]*Connection
 	sync.Mutex
 }
@@ -53,8 +54,17 @@ func (m *connectionManager) GetTransaction() (*Transaction, error) {
 func (m *connectionManager) configure(name string, config map[string]string) error {
 
 	m.Lock()
-	
-	conn, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", config["host"], config["port"], config["database"], config["user"], config["password"], config["ssl"]))
+
+	dsn := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", config["host"], config["port"], config["database"], config["user"], config["password"], config["ssl"])
+
+	var conn *sql.DB
+	var err error
+
+	if driver, b := config["driver"]; b {
+		conn, err = sql.Open(driver, dsn)
+	} else {
+		conn, err = sql.Open("postgres", dsn)
+	}
 
 	if err != nil {
 		return err
@@ -69,7 +79,7 @@ func (m *connectionManager) configure(name string, config map[string]string) err
 	}
 
 	if _, ok := m.connections[name]; !ok {
-		m.connections[name] = &Connection{db:conn}
+		m.connections[name] = &Connection{db: conn}
 	}
 
 	m.configured = true
@@ -79,4 +89,3 @@ func (m *connectionManager) configure(name string, config map[string]string) err
 	return nil
 
 }
-

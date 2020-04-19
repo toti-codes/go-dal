@@ -77,10 +77,6 @@ func (b *UpdateBuilder) Type(entity interface{}) *UpdateBuilder {
 			config[v] = true
 		}
 
-		if value == nil || config["autoincrement"] || config["omitted"] {
-			continue
-		}
-
 		if columnName == "" {
 			columnName = e.Type().Field(i).Name
 		}
@@ -88,6 +84,10 @@ func (b *UpdateBuilder) Type(entity interface{}) *UpdateBuilder {
 		if columnName == "id" {
 			value = int64(value.(int64))
 			id = value
+		}
+
+		if value == nil || config["autoincrement"] || config["omitted"] {
+			continue
 		}
 
 		if config["json"] || config["jsonb"] {
