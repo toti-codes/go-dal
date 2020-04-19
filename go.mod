@@ -1,4 +1,4 @@
-module github.com/cloudoti/sunat-go
+module github.com/cloudoti/go-dal
 
 go 1.13
 
