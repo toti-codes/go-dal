@@ -123,7 +123,9 @@ func (b *UpdateBuilder) OrWhere(condition string) *UpdateBuilder {
 }
 
 func (b *UpdateBuilder) Build() {
-	b.b.Build()
+	if _, err := b.b.Build(); err != nil {
+		panic(err)
+	}
 }
 
 func (b *UpdateBuilder) GetBuilder() *Builder {

@@ -273,10 +273,10 @@ func TestQueryUpdate(t *testing.T) {
 	b = NewBuilder()
 
 	b.Update("table_1").
-		Set("column_1", ":column1").
-		Set("column_2", ":column2").
+		Set("column_1", ":columna").
+		Set("column_2", ":columnb").
 		Where("id = :id").
-		SetParameter("column1", "first").SetParameter("column2", "second").SetParameter("id", 10).Build()
+		SetParameter("columna", "first").SetParameter("columnb", "second").SetParameter("id", 10).Build()
 
 	assert.Equal(t, "UPDATE TABLE_1 SET COLUMN_1 = $1, COLUMN_2 = $2 WHERE (ID = $3)", strings.ToUpper(b.GetSQL()))
 	assert.Equal(t, []interface{}{"first", "second", 10}, b.GetParameters())
