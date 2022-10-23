@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
+	"strconv"
 	"sync"
 )
 
@@ -70,8 +71,18 @@ func (m *connectionManager) configure(name string, config map[string]string) err
 		return err
 	}
 
-	//db.SetMaxOpenConns(10)
-	//db.SetMaxIdleConns(5)
+	if val, ok := config["maxOpenConns"]; ok {
+		if max, err := strconv.Atoi(val); err != nil {
+			conn.SetMaxOpenConns(max)
+		}
+	}
+
+	if val, ok := config["maxIdleConns"]; ok {
+		if max, err := strconv.Atoi(val); err != nil {
+			conn.SetMaxIdleConns(max)
+		}
+	}
+
 	err = conn.Ping()
 
 	if err != nil {
